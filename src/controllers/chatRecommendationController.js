@@ -2,6 +2,11 @@ import { extractPreferencesFromMessage } from "../services/preferenceParserServi
 import { getRecommendations } from "../services/recommendationService.js";
 import { generateRecommendationExplanation } from "../services/aiService.js";
 
+import {
+    getMissingPreferences,
+    generateFollowUpQuestion
+} from "../services/conversationService.js";
+
 export async function chatRecommendShoes(req, res) {
     try {
         const { message } = req.body;
@@ -12,9 +17,29 @@ export async function chatRecommendShoes(req, res) {
             });
         }
 
-        const preferences = await extractPreferencesFromMessage(message);
+        const preferences =
+            await extractPreferencesFromMessage(message);
 
-        const recommendations = getRecommendations(preferences);
+        const missingPreferences =
+            getMissingPreferences(preferences);
+
+        if (missingPreferences.length > 0) {
+            return res.json({
+                status: "needs_more_information",
+
+                preferences,
+
+                missingPreferences,
+
+                question:
+                    generateFollowUpQuestion(
+                        missingPreferences
+                    )
+            });
+        }
+
+        const recommendations =
+            getRecommendations(preferences);
 
         const aiExplanation =
             await generateRecommendationExplanation(
@@ -22,8 +47,8 @@ export async function chatRecommendShoes(req, res) {
                 recommendations
             );
 
-        res.json({
-            message,
+        return res.json({
+            status: "complete",
             preferences,
             recommendations,
             aiExplanation
@@ -32,7 +57,7 @@ export async function chatRecommendShoes(req, res) {
     } catch (error) {
         console.error(error);
 
-        res.status(500).json({
+        return res.status(500).json({
             error: "Unable to process recommendation request."
         });
     }
