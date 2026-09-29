@@ -17,17 +17,18 @@ export function getMissingPreferences(preferences) {
 }
 
 export function generateFollowUpQuestion(missingPreferences) {
-    if (missingPreferences.includes("level")) {
-        return "Che livello hai attualmente in arrampicata?";
-    }
+    const next = missingPreferences[0];
 
-    if (missingPreferences.includes("discipline")) {
-        return "Pratichi principalmente boulder, arrampicata sportiva o indoor?";
-    }
+    const questions = {
+        level:
+            "Che livello hai attualmente in arrampicata?",
 
-    if (missingPreferences.includes("footWidth")) {
-        return "Diresti di avere un piede stretto, medio o largo?";
-    }
+        discipline:
+            "Pratichi principalmente boulder, arrampicata sportiva o indoor?",
 
-    return null;
+        footWidth:
+            "Diresti di avere un piede stretto, medio o largo?"
+    };
+
+    return questions[next] ?? null;
 }

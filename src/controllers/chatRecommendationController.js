@@ -7,9 +7,18 @@ import {
     generateFollowUpQuestion
 } from "../services/conversationService.js";
 
+import {
+    createConversation,
+    getConversation,
+    updateConversationPreferences
+} from "../services/conversationStore.js";
+
 export async function chatRecommendShoes(req, res) {
     try {
-        const { message } = req.body;
+        const {
+            message,
+            conversationId
+        } = req.body;
 
         if (!message) {
             return res.status(400).json({
@@ -17,8 +26,27 @@ export async function chatRecommendShoes(req, res) {
             });
         }
 
-        const preferences =
+        let conversation;
+
+        if (conversationId) {
+            conversation = getConversation(conversationId);
+        }
+
+        if (!conversation) {
+            conversation = createConversation();
+        }
+
+        const extractedPreferences =
             await extractPreferencesFromMessage(message);
+
+        conversation =
+            updateConversationPreferences(
+                conversation.id,
+                extractedPreferences
+            );
+
+        const preferences =
+            conversation.preferences;
 
         const missingPreferences =
             getMissingPreferences(preferences);
@@ -26,6 +54,9 @@ export async function chatRecommendShoes(req, res) {
         if (missingPreferences.length > 0) {
             return res.json({
                 status: "needs_more_information",
+
+                conversationId:
+                    conversation.id,
 
                 preferences,
 
@@ -49,8 +80,14 @@ export async function chatRecommendShoes(req, res) {
 
         return res.json({
             status: "complete",
+
+            conversationId:
+                conversation.id,
+
             preferences,
+
             recommendations,
+
             aiExplanation
         });
 
